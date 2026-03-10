@@ -60,14 +60,110 @@ def simulate_population_single(func, T_max, Z0, beta):
                 div += 1
             else:
                 Z -= 1
-            times.append(t)
-            population.append(Z)
-            divisions.append(div)
+        times.append(t)
+        population.append(Z)
+        divisions.append(div)
 
     return np.array(times), np.array(population), np.array(divisions)
 
+def simulate_population_double(func, T_max, M0, R0, beta, u, C2):
+    '''
+    Apply same logic as above, however, now we have 4 rates, l_x, l_y, mu_x, mu_y
+    
+    '''
+    #initialise time and population
+    t = 0
+    M = M0 #initialise sensitive cell population
+    R = R0 #initialise resistant cell populations
+    div = 0
+    #store time and population to plot at the end
+    times = [0]
+    population_s = [M]
+    population_r = [R]
 
-def get_mean_trajectory(num_trials, T_max, Z0, func, beta):
+    #B = beta * 250
+
+    #store number of cell divisions: birth
+    #divisions = [div]
+    
+
+    while t < T_max and (M+R) > 0:
+
+        #extract true rate -> Beta(t)
+        l_x, l_y, mu_x, mu_y = func(t, C2)
+        #per capita rate
+        #should u be included here
+        rate_s = l_x + mu_x
+        rate_r = l_y + mu_y
+        total_rate = (rate_s * M) + (rate_r * R)
+        B = beta * (M+R)
+        #We generate waiting time to the next event from an exponential distribution with the majorizing rate
+        dt = np.random.exponential(1/B)
+        t += dt
+
+        U = np.random.uniform()
+
+        #aceept if U <= beta(t)/beta
+        if U <= total_rate / B:
+
+            prob_s_birth = l_x * M * (1-u)
+            prob_s_death = prob_s_birth + (mu_x * M)
+            prob_r_birth = prob_s_death + (l_y * R) + (l_x * M * u)
+            prob_r_death = prob_r_birth + (mu_y * R)
+            d = np.random.uniform() * total_rate
+
+
+            if d < prob_s_birth:
+                M += 1
+            #sensitive cell death
+            elif d < prob_s_death:
+                M -= 1
+            #mutation
+            elif d < prob_r_birth:
+                R += 1
+            else:
+                R -= 1
+            times.append(t)
+            population_s.append(M)
+            population_r.append(R)
+            #divisions.append(div)
+
+    return np.array(times), np.array(population_s), np.array(population_r)#, np.array(divisions)
+    
+    
+
+
+def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, C2):
+    #----------------------
+    #This is a lot of gemini. Need to understand how to correct arrays to a single length where they vary for plot
+    #----------------------
+
+    # 1. Define the common time grid (e.g., every 1 time unit)
+    common_grid = np.linspace(0, T_max, T_max + 1)
+    pop_s_trajectories = []
+    pop_r_trajectories = []
+
+    for _ in range(num_trials):
+        t_sim, S_sim, R_sim = simulate_population_double(func, T_max, M0, R0, beta, u, C2)
+        
+        # 2. Resample the simulation onto the common grid
+        # We use 'searchsorted' to treat it as a step function (constant between events)
+        indices = np.searchsorted(t_sim, common_grid, side='right') - 1
+        # Handle the case where t=0 is the first index
+        indices_s = np.clip(indices, 0, len(S_sim) - 1)
+        indices_r = np.clip(indices, 0, len(R_sim) - 1)
+        grid_population_s = S_sim[indices_s]
+        grid_population_r = R_sim[indices_r]
+        
+        pop_s_trajectories.append(grid_population_s)
+        pop_r_trajectories.append(grid_population_r)
+
+    # 3. Calculate Mean (and optionally standard deviation)
+    mean_pop_s = np.mean(pop_s_trajectories, axis=0)
+    mean_pop_r = np.mean(pop_r_trajectories, axis=0)
+    return common_grid, mean_pop_s, mean_pop_r
+
+def get_mean_trajectory_single(num_trials, T_max, Z0, func, beta):
     #----------------------
     #This is a lot of gemini. Need to understand how to correct arrays to a single length where they vary for plot
     #----------------------
