@@ -66,7 +66,7 @@ def simulate_population_single(func, T_max, Z0, beta):
 
     return np.array(times), np.array(population), np.array(divisions)
 
-def simulate_population_double(func, T_max, M0, R0, beta, u, C2):
+def simulate_population_double(func, T_max, M0, R0, beta, u, B1, C2):
     '''
     Apply same logic as above, however, now we have 4 rates, l_x, l_y, mu_x, mu_y
     
@@ -90,7 +90,7 @@ def simulate_population_double(func, T_max, M0, R0, beta, u, C2):
     while t < T_max and (M+R) > 0:
 
         #extract true rate -> Beta(t)
-        l_x, l_y, mu_x, mu_y = func(t, C2)
+        l_x, l_y, mu_x, mu_y = func(t, B1, C2)
         #per capita rate
         #should u be included here
         rate_s = l_x + mu_x
@@ -133,7 +133,7 @@ def simulate_population_double(func, T_max, M0, R0, beta, u, C2):
     
 
 
-def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, C2):
+def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, B1, C2):
     #----------------------
     #This is a lot of gemini. Need to understand how to correct arrays to a single length where they vary for plot
     #----------------------
@@ -142,26 +142,45 @@ def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, C2):
     common_grid = np.linspace(0, T_max, T_max + 1)
     pop_s_trajectories = []
     pop_r_trajectories = []
+    #prob_r = []
 
+    r = 0
     for _ in range(num_trials):
-        t_sim, S_sim, R_sim = simulate_population_double(func, T_max, M0, R0, beta, u, C2)
-        
+        t_sim, S_sim, R_sim = simulate_population_double(func, T_max, M0, R0, beta, u, B1, C2)
+        # if R_sim[-1] > 0:
+        #     r += 1
+        # else:
+        #     r += 0
+        # prob_t = r/(_+1)
         # 2. Resample the simulation onto the common grid
         # We use 'searchsorted' to treat it as a step function (constant between events)
         indices = np.searchsorted(t_sim, common_grid, side='right') - 1
         # Handle the case where t=0 is the first index
         indices_s = np.clip(indices, 0, len(S_sim) - 1)
         indices_r = np.clip(indices, 0, len(R_sim) - 1)
+        #indices_prob_r = np.clip(indices, 0, len(R_sim) - 1)
+
         grid_population_s = S_sim[indices_s]
         grid_population_r = R_sim[indices_r]
+        #grid_population_prob_r = R_sim[indices_prob_r]
+
         
         pop_s_trajectories.append(grid_population_s)
         pop_r_trajectories.append(grid_population_r)
+        #prob_r.append(prob_t)
+
+
+    # Convert FIRST, then operate
+    pop_s_trajectories = np.array(pop_s_trajectories)
+    pop_r_trajectories = np.array(pop_r_trajectories)
 
     # 3. Calculate Mean (and optionally standard deviation)
     mean_pop_s = np.mean(pop_s_trajectories, axis=0)
     mean_pop_r = np.mean(pop_r_trajectories, axis=0)
-    return common_grid, mean_pop_s, mean_pop_r
+    prob_r = np.mean(pop_r_trajectories > 0, axis=0)
+
+    
+    return common_grid, mean_pop_s, mean_pop_r, prob_r
 
 def get_mean_trajectory_single(num_trials, T_max, Z0, func, beta):
     #----------------------
