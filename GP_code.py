@@ -135,7 +135,7 @@ def simulate_population_double(func, T_max, M0, R0, beta, u, B1, C2):
 
 def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, B1, C2):
     #----------------------
-    #This is a lot of gemini. Need to understand how to correct arrays to a single length where they vary for plot
+    #Clipped indices is AI
     #----------------------
 
     # 1. Define the common time grid (e.g., every 1 time unit)
@@ -177,15 +177,15 @@ def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, B1, C2)
     # 3. Calculate Mean (and optionally standard deviation)
     mean_pop_s = np.mean(pop_s_trajectories, axis=0)
     mean_pop_r = np.mean(pop_r_trajectories, axis=0)
-    prob_r = np.mean(pop_r_trajectories > 0, axis=0)
+
+    prob_r = np.mean(pop_r_trajectories > 0, axis=0) #probability of resistant cell
+    var_r = np.var(pop_r_trajectories , axis=0) #variance of resistant cells
 
     
-    return common_grid, mean_pop_s, mean_pop_r, prob_r
+    return common_grid, mean_pop_s, mean_pop_r, prob_r, var_r
 
 def get_mean_trajectory_single(num_trials, T_max, Z0, func, beta):
-    #----------------------
-    #This is a lot of gemini. Need to understand how to correct arrays to a single length where they vary for plot
-    #----------------------
+    
 
     # 1. Define the common time grid (e.g., every 1 time unit)
     common_grid = np.linspace(0, T_max, T_max + 1)
@@ -206,7 +206,13 @@ def get_mean_trajectory_single(num_trials, T_max, Z0, func, beta):
         pop_trajectories.append(grid_population)
         div_trajectories.append(grid_divisions)
 
+    pop_trajectories = np.array(pop_trajectories)
+    
+
     # 3. Calculate Mean (and optionally standard deviation)
     mean_pop = np.mean(pop_trajectories, axis=0)
     mean_divs = np.mean(div_trajectories, axis=0)
-    return common_grid, mean_pop, mean_divs
+
+    #prob = np.mean()
+    var = np.var(pop_trajectories, axis = 0)
+    return common_grid, mean_pop, mean_divs, var
