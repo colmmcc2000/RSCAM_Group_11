@@ -216,6 +216,24 @@ def simulate_pulsed_therapy(rates, T_max, M0, beta, u, cycle_length, dosing_leng
             #divisions.append(div)
 
     return np.array(times), np.array(population_s), np.array(population_r)
+def get_concentration(t, D, kappa, tau, loading_dose=False):
+    """
+    t: current time
+    D: dose amount
+    kappa: elimination rate (ln(2)/half_life)
+    tau: dosing interval (e.g., 1.0 for daily)
+    """
+    n = int(t / tau) + 1  # Number of doses given so far
+    time_since_last = t % tau
+    
+    if loading_dose == True:
+        # Immediately at steady-state peak
+        c_max = D / (1 - np.exp(-kappa * tau))
+    else:
+        # Gradual accumulation peak after n doses
+        c_max = D * (1 - np.exp(-n * kappa * tau)) / (1 - np.exp(-kappa * tau))
+    
+    return c_max * np.exp(-kappa * time_since_last)
 
 def mean_pulsed_therapy(num_trials, T_max, M0, rates, beta, u, cycle, dosing, s):
     #----------------------
