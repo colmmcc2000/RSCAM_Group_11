@@ -85,7 +85,8 @@ def simulate_population_double(func, T_max, M0, R0, beta, u, B1, C2):
 
     #store number of cell divisions: birth
     #divisions = [div]
-    
+    if isinstance(M, np.ndarray) or isinstance(R, np.ndarray):
+        print("M or R has become an array!")
 
     while t < T_max and (M+R) > 0:
 
@@ -102,6 +103,12 @@ def simulate_population_double(func, T_max, M0, R0, beta, u, B1, C2):
         t += dt
 
         U = np.random.uniform()
+
+        # if R > 1e3: 
+        # # Set T to T_max so it counts as 'resistant' at the end
+        #     t = T_max
+        #     R = 1e3 + 1 
+        #     break
 
         #aceept if U <= beta(t)/beta
         if U <= total_rate / B:
@@ -223,6 +230,7 @@ def get_concentration(t, D, kappa, tau, loading_dose=False):
     kappa: elimination rate (ln(2)/half_life)
     tau: dosing interval (e.g., 1.0 for daily)
     """
+    t = float(t)
     n = int(t / tau) + 1  # Number of doses given so far
     time_since_last = t % tau
     
@@ -233,7 +241,7 @@ def get_concentration(t, D, kappa, tau, loading_dose=False):
         # Gradual accumulation peak after n doses
         c_max = D * (1 - np.exp(-n * kappa * tau)) / (1 - np.exp(-kappa * tau))
     
-    return c_max * np.exp(-kappa * time_since_last)
+    return float(c_max * np.exp(-kappa * time_since_last))
 
 def mean_pulsed_therapy(num_trials, T_max, M0, rates, beta, u, cycle, dosing, s):
     #----------------------
