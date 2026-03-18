@@ -42,20 +42,23 @@ def simulate_population_single(func, T_max, Z0, beta):
 
     while t < T_max and Z > 0:
 
-        #extract true rate -> Beta(t)
-        l, mu = func(t)
-        #per capita rate
-        total_rate = (l + mu) * Z
+        
         B = beta * Z
         #We generate waiting time to the next event from an exponential distribution with the majorizing rate
         dt = np.random.exponential(1/B)
         t += dt
 
+        #extract true rate -> Beta(t)
+        l, mu = func(t)
+        #per capita rate
+        total_rate = (l + mu) * Z
+        
         U = np.random.uniform()
 
         #aceept if U <= beta(t)/beta
         if U <= total_rate / B:
             if np.random.uniform() < l / (l + mu):
+
                 Z += 1
                 div += 1
             else:
