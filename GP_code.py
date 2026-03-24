@@ -93,16 +93,18 @@ def simulate_population_double(func, T_max, M0, R0, beta, u, B1, C2,):
     while t < T_max and (M+R) > 0:
 
         #extract true rate -> Beta(t)
+
+        B = beta * (M+R)
+        #We generate waiting time to the next event from an exponential distribution with the majorizing rate
+        dt = np.random.exponential(1/B)
+        t += dt
+
         l_x, l_y, mu_x, mu_y = func(t, B1, C2)
         #per capita rate
         #should u be included here
         rate_s = l_x + mu_x
         rate_r = l_y + mu_y
         total_rate = (rate_s * M) + (rate_r * R)
-        B = beta * (M+R)
-        #We generate waiting time to the next event from an exponential distribution with the majorizing rate
-        dt = np.random.exponential(1/B)
-        t += dt
 
         U = np.random.uniform()
 
