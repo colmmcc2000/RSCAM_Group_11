@@ -248,47 +248,39 @@ def get_concentration(t, D, kappa, tau, loading_dose=False):
     return float(c_max * np.exp(-kappa * time_since_last))
 
 def mean_pulsed_therapy(num_trials, T_max, M0, rates, beta, u, cycle, dosing, s):
-    #----------------------
-    #Clipped indices is AI
-    #----------------------
-
-    # 1. Define the common time grid (e.g., every 1 time unit)
+  
+    # Define the common time grid (e.g., every 1 time unit)
     common_grid = np.linspace(0, T_max, T_max + 1)
     pop_s_trajectories = []
     pop_r_trajectories = []
-    #prob_r = []
 
-    r = 0
+   
     for _ in range(num_trials):
         t_sim, S_sim, R_sim = simulate_pulsed_therapy(rates, T_max, M0, beta, u, cycle, dosing, s)
-        # if R_sim[-1] > 0:
-        #     r += 1
-        # else:
-        #     r += 0
-        # prob_t = r/(_+1)
-        # 2. Resample the simulation onto the common grid
-        # We use 'searchsorted' to treat it as a step function (constant between events)
+        
+        # Resample the simulation onto the common grid
+        # use 'searchsorted' to treat it as a step function (constant between events)
         indices = np.searchsorted(t_sim, common_grid, side='right') - 1
         # Handle the case where t=0 is the first index
         indices_s = np.clip(indices, 0, len(S_sim) - 1)
         indices_r = np.clip(indices, 0, len(R_sim) - 1)
-        #indices_prob_r = np.clip(indices, 0, len(R_sim) - 1)
+        
 
         grid_population_s = S_sim[indices_s]
         grid_population_r = R_sim[indices_r]
-        #grid_population_prob_r = R_sim[indices_prob_r]
+        #
 
         
         pop_s_trajectories.append(grid_population_s)
         pop_r_trajectories.append(grid_population_r)
-        #prob_r.append(prob_t)
+    
 
 
     # Convert FIRST, then operate
     pop_s_trajectories = np.array(pop_s_trajectories)
     pop_r_trajectories = np.array(pop_r_trajectories)
 
-    # 3. Calculate Mean (and optionally standard deviation)
+    # calc mean
     mean_pop_s = np.mean(pop_s_trajectories, axis=0)
     mean_pop_r = np.mean(pop_r_trajectories, axis=0)
 
@@ -302,47 +294,41 @@ def mean_pulsed_therapy(num_trials, T_max, M0, rates, beta, u, cycle, dosing, s)
 
 
 def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, B1, C2):
-    #----------------------
-    #Clipped indices is AI
-    #----------------------
+   #Updated for double-type process
 
-    # 1. Define the common time grid (e.g., every 1 time unit)
+    # common time grid
     common_grid = np.linspace(0, T_max, T_max + 1)
     pop_s_trajectories = []
     pop_r_trajectories = []
-    #prob_r = []
+    
 
-    r = 0
+    #r = 0
     for _ in range(num_trials):
         t_sim, S_sim, R_sim = simulate_population_double(func, T_max, M0, R0, beta, u, B1, C2)
-        # if R_sim[-1] > 0:
-        #     r += 1
-        # else:
-        #     r += 0
-        # prob_t = r/(_+1)
-        # 2. Resample the simulation onto the common grid
-        # We use 'searchsorted' to treat it as a step function (constant between events)
+        
+        # resample the simulation onto the common grid
+        # 'searchsorted' to treat as a step function
         indices = np.searchsorted(t_sim, common_grid, side='right') - 1
         # Handle the case where t=0 is the first index
         indices_s = np.clip(indices, 0, len(S_sim) - 1)
         indices_r = np.clip(indices, 0, len(R_sim) - 1)
-        #indices_prob_r = np.clip(indices, 0, len(R_sim) - 1)
+        
 
         grid_population_s = S_sim[indices_s]
         grid_population_r = R_sim[indices_r]
-        #grid_population_prob_r = R_sim[indices_prob_r]
+        
 
         
         pop_s_trajectories.append(grid_population_s)
         pop_r_trajectories.append(grid_population_r)
-        #prob_r.append(prob_t)
+       
 
 
     # Convert FIRST, then operate
     pop_s_trajectories = np.array(pop_s_trajectories)
     pop_r_trajectories = np.array(pop_r_trajectories)
 
-    # 3. Calculate Mean (and optionally standard deviation)
+    # Calculate Mean 
     mean_pop_s = np.mean(pop_s_trajectories, axis=0)
     mean_pop_r = np.mean(pop_r_trajectories, axis=0)
 
@@ -355,7 +341,7 @@ def get_mean_trajectory_double(num_trials, T_max, M0, R0, func, beta, u, B1, C2)
 def get_mean_trajectory_single(num_trials, T_max, Z0, func, beta):
     
 
-    # 1. Define the common time grid (e.g., every 1 time unit)
+    # Define the grid
     common_grid = np.linspace(0, T_max, T_max + 1)
     pop_trajectories = []
     div_trajectories = []
@@ -363,10 +349,9 @@ def get_mean_trajectory_single(num_trials, T_max, Z0, func, beta):
     for _ in range(num_trials):
         t_sim, X_sim, div_sim = simulate_population_single(func, T_max, Z0, beta)
         
-        # 2. Resample the simulation onto the common grid
-        # We use 'searchsorted' to treat it as a step function (constant between events)
+        # Resample onto the common grid
         indices = np.searchsorted(t_sim, common_grid, side='right') - 1
-        # Handle the case where t=0 is the first index
+        
         indices = np.clip(indices, 0, len(X_sim) - 1)
         grid_population = X_sim[indices]
         grid_divisions = div_sim[indices]
@@ -377,7 +362,7 @@ def get_mean_trajectory_single(num_trials, T_max, Z0, func, beta):
     pop_trajectories = np.array(pop_trajectories)
     
 
-    # 3. Calculate Mean (and optionally standard deviation)
+    # Calculate Mean 
     mean_pop = np.mean(pop_trajectories, axis=0)
     mean_divs = np.mean(div_trajectories, axis=0)
 
